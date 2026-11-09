@@ -15,6 +15,7 @@ type FormItem = {
   datasource?: string;
   row_count?: number;
   ref_count?: number;
+  segments?: string[];
 };
 type DsGroup = {
   name: string;
@@ -179,6 +180,9 @@ export function MentionPicker({ isActive = true }: { isActive?: boolean } = {}) 
       if ((it.table ?? "").toLowerCase().includes(q)) return true;
       const py = pinyinMap.current.get(it.table);
       if (py && (py.full.includes(q) || py.abbr.includes(q))) return true;
+      // jieba 分词匹配：表单中文名的分词片段出现在搜索词中（如"付款单"匹配"付款申请通知书"）
+      const segs = it.segments;
+      if (segs && segs.some((s) => s.length >= 2 && q.includes(s.toLowerCase()))) return true;
       return false;
     });
   };

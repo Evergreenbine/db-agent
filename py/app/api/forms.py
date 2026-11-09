@@ -3,6 +3,11 @@
 import re
 import time
 
+import jieba
+
+# 预热 jieba 词典（首次调用较慢）
+jieba.initialize()
+
 from fastapi import APIRouter, Query
 
 from app.agents.rag.schema_store import _ensure_sqlite
@@ -184,6 +189,17 @@ async def track_form(table: str = Query(..., description="table name to track"))
     return {"tracked": True, "table": table}
 
 
+def _add_segments(items: list[dict]) -> list[dict]:
+    """用 jieba 分词，给每条表单加上 segments 字段（长度>=2的词）。"""
+    for it in items:
+        name = it.get("chinese_name") or ""
+        if name:
+            it["segments"] = [w for w in jieba.lcut(name) if len(w) >= 2]
+        else:
+            it["segments"] = []
+    return items
+
+
 @router.get("/")
 
 async def list_forms():
@@ -195,9 +211,9 @@ async def list_forms():
         for ds in ds_list:
             _sort_by_ref(ds["tables"], refs)
         _cache["data"] = {
-            "builtin": _sort_by_ref(_builtin_tables(), refs),
-            "workflow": _sort_by_ref(_custom_forms(workflow=True), refs),
-            "modeled": _sort_by_ref(_custom_forms(workflow=False), refs),
+            "builtin": _add_segments(_sort_by_ref(_builtin_tables(), refs)),
+            "workflow": _add_segments(_sort_by_ref(_custom_forms(workflow=True), refs)),
+            "modeled": _add_segments(_sort_by_ref(_custom_forms(workflow=False), refs)),
             "datasources": ds_list,
         }
         _cache["ts"] = now
