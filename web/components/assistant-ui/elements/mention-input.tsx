@@ -7,7 +7,7 @@ import { useMentionStore, type MentionItem } from "@/lib/mention-store";
 import { mentionChipClass } from "@/lib/mention-colors";
 import { encodeMentionsSuffix } from "@/lib/mention-encode";
 
-const INPUT_SELECTOR = 'div[data-role="mention-input"]';
+const INPUT_SELECTOR = '[data-active="true"] div[data-role="mention-input"]';
 const CHIP_BASE =
   "inline-block align-middle rounded px-1 py-0.5 mr-1 cursor-default whitespace-nowrap select-none";
 
@@ -189,7 +189,7 @@ export function insertTextAtCursor(text: string) {
 
 const preventBlur = (e: React.MouseEvent) => e.preventDefault();
 
-export function MentionInput({ autoFocus }: { autoFocus: boolean }) {
+export function MentionInput({ autoFocus, isActive = true }: { autoFocus: boolean; isActive?: boolean }) {
   const { value, setText, send, canSend, isDisabled } = unstable_useComposerInput();
   const ref = useRef<HTMLDivElement>(null);
   const cacheRef = useRef<Record<string, Detail>>({});
@@ -245,6 +245,10 @@ export function MentionInput({ autoFocus }: { autoFocus: boolean }) {
     });
     useMentionStore.getState().setAll(items);
   }, []);
+
+  useEffect(() => {
+    if (isActive) syncMentions();
+  }, [isActive, syncMentions]);
 
   const sync = useCallback(() => {
     setText(extractText());

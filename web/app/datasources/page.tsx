@@ -163,9 +163,15 @@ export default function DataSourcesPage() {
     <div className="min-h-screen bg-zinc-50">
       <div className="border-b bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <a href="/" className="text-zinc-400 hover:text-zinc-700" style={{ cursor: "pointer" }}>
-            <ArrowLeftIcon className="size-5" />
-          </a>
+          {onBack ? (
+            <button onClick={onBack} className="text-zinc-400 hover:text-zinc-700" style={{ cursor: "pointer" }}>
+              <ArrowLeftIcon className="size-5" />
+            </button>
+          ) : (
+            <a href="/" className="text-zinc-400 hover:text-zinc-700" style={{ cursor: "pointer" }}>
+              <ArrowLeftIcon className="size-5" />
+            </a>
+          )}
           <DatabaseIcon className="size-5 text-blue-600" />
           <h1 className="text-lg font-semibold">数据源管理</h1>
           <Button size="sm" className="ml-auto bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowForm((s) => !s)}>

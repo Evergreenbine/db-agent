@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect,  useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UIMessage } from "ai";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/ai-sdk";
@@ -17,10 +17,13 @@ import { useSessionStore } from "@/lib/session-store";
 import { useMentionStore } from "@/lib/mention-store";
 import { useComposerBridge } from "@/lib/composer-bridge";
 import { useAui } from "@assistant-ui/react";
+import { useAuiState } from "@assistant-ui/store";
 import { Database, Brain } from "lucide-react";
-import Link from "next/link";
 import { ChangeFormCard } from "@/components/assistant-ui/change-form-card";
 import { WriteConfirmCard } from "@/components/assistant-ui/write-confirm-card";
+
+import KnowledgePage from "./knowledge/page";
+import DatasourcesPage from "./datasources/page";
 
 type HistoryMessage = {
   role: string;
@@ -112,12 +115,33 @@ function toUiMessages(sessionId: string, messages: HistoryMessage[]): UIMessage[
 }
 
 export const Assistant = () => {
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
-  const [newChatKey, setNewChatKey] = useState(0);
+  const [activePanel, setActivePanel] = useState<"chat" | "knowledge" | "datasources">("chat");
+  const [mountedChats, setMountedChats] = useState<Map<string, UIMessage[]>>(new Map());
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
+  const [runningChats, setRunningChats] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (mountedChats.size === 0) {
+      startNewConversation();
+    }
+  }, []);
+
+  const handleRunningChange = (key: string, running: boolean) => {
+    setRunningChats((prev) => {
+      const next = new Set(prev);
+      if (running) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
 
   const selectConversation = async (sessionId: string) => {
+    if (mountedChats.has(sessionId)) {
+      setActiveKey(sessionId);
+      setActivePanel("chat");
+      return;
+    }
     const { token, user } = useAuthStore.getState();
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -128,70 +152,120 @@ export const Assistant = () => {
     );
     const data = await res.json();
     if (!res.ok) throw new Error(data?.detail || "历史对话加载失败");
-    setInitialMessages(toUiMessages(sessionId, data.messages || []));
-    setActiveSessionId(sessionId);
+    const messages = toUiMessages(sessionId, data.messages || []);
+    setMountedChats((prev) => {
+      const next = new Map(prev);
+      if (next.size >= 5) {
+        for (const key of next.keys()) {
+          if (key !== activeKey) { next.delete(key); break; }
+        }
+      }
+      next.set(sessionId, messages);
+      return next;
+    });
+    setActiveKey(sessionId);
+    setActivePanel("chat");
   };
 
   const startNewConversation = () => {
-    setActiveSessionId(null);
-    setInitialMessages([]);
-    setNewChatKey((key) => key + 1);
+    const key = `new-${Date.now()}`;
+    setMountedChats((prev) => {
+      const next = new Map(prev);
+      if (next.size >= 5) {
+        for (const k of next.keys()) {
+          if (k !== activeKey) { next.delete(k); break; }
+        }
+      }
+      next.set(key, []);
+      return next;
+    });
+    setActiveKey(key);
+    setActivePanel("chat");
   };
 
   const refreshHistory = () => {
     window.setTimeout(() => setHistoryVersion((version) => version + 1), 1000);
   };
 
-  const runtimeKey = activeSessionId ?? `new-${newChatKey}`;
-
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex h-dvh w-full pr-0.5">
         <ConversationSidebar
-          activeSessionId={activeSessionId}
+          activeSessionId={activeKey?.startsWith("new-") ? null : activeKey}
           refreshKey={historyVersion}
           onSelect={(sessionId) => void selectConversation(sessionId)}
           onNew={startNewConversation}
+          runningChats={runningChats}
         />
-        <SidebarInset>
+        <SidebarInset className="relative">
           <header className="flex h-16 shrink-0 items-center gap-3 border-b pl-6 pr-4">
             <SidebarTrigger />
-            <Link
-            href="/knowledge"
-            className="ml-auto inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            title="记忆管理"
-          >
-            <Brain className="size-4" />
-            <span className="hidden sm:inline">记忆</span>
-          </Link>
-          <Link
-              href="/datasources"
+            <button
+              onClick={() => setActivePanel(activePanel === "knowledge" ? "chat" : "knowledge")}
+              className="ml-auto inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="记忆管理"
+            >
+              <Brain className="size-4" />
+              <span className="hidden sm:inline">记忆</span>
+            </button>
+            <button
+              onClick={() => setActivePanel(activePanel === "datasources" ? "chat" : "datasources")}
               className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               title="数据源设置"
             >
               <Database className="size-4" />
               <span className="hidden sm:inline">数据源</span>
-            </Link>
+            </button>
             <UserMenu />
           </header>
-          <div className="flex-1 overflow-hidden">
-            <AssistantChat
-              key={runtimeKey}
-              chatId={runtimeKey}
-              initialMessages={initialMessages}
-              onFinished={refreshHistory}
-            />
+          <div className="relative flex-1 overflow-hidden">
+            {Array.from(mountedChats.entries()).map(([key, messages]) => (
+              <div
+                key={key}
+                className="absolute inset-0"
+                data-active={key === activeKey && activePanel === "chat" ? "true" : "false"}
+                style={{ display: key === activeKey && activePanel === "chat" ? "block" : "none" }}
+              >
+                <AssistantChat
+                  chatId={key}
+                  initialMessages={messages}
+                  isActive={key === activeKey && activePanel === "chat"}
+                  onFinished={refreshHistory}
+                  onRunningChange={(running) => handleRunningChange(key, running)}
+                />
+              </div>
+            ))}
           </div>
+          {activePanel === "knowledge" && (
+            <div className="absolute inset-0 z-50 bg-background">
+              <KnowledgePage onBack={() => setActivePanel("chat")} />
+            </div>
+          )}
+          {activePanel === "datasources" && (
+            <div className="absolute inset-0 z-50 bg-background">
+              <DatasourcesPage onBack={() => setActivePanel("chat")} />
+            </div>
+          )}
         </SidebarInset>
       </div>
     </SidebarProvider>
   );
-};
+};;
 
 
-function ComposerBridge() {
+function ChatStateWatcher({ onRunningChange }: { onRunningChange: (running: boolean) => void }) {
+  const isRunning = useAuiState((s) => s.thread.isRunning);
+  const cbRef = useRef(onRunningChange);
+  cbRef.current = onRunningChange;
+  useEffect(() => {
+    cbRef.current(isRunning);
+  }, [isRunning]);
+  return null;
+}
+function ComposerBridge({ isActive }: { isActive: boolean }) {
   const aui = useAui();
   useEffect(() => {
+    if (!isActive) return;
     useComposerBridge.getState().setSendMessage((text: string) => {
       try {
         const c = aui.optional.composer;
@@ -203,21 +277,25 @@ function ComposerBridge() {
       }
     });
     return () => useComposerBridge.getState().setSendMessage(null);
-  }, [aui]);
+  }, [aui, isActive]);
   return null;
 }
 function AssistantChat({
   chatId,
   initialMessages,
   onFinished,
+  isActive,
+  onRunningChange,
 }: {
   chatId: string;
   initialMessages: UIMessage[];
   onFinished: () => void;
+  isActive: boolean;
+  onRunningChange: (running: boolean) => void;
 }) {
     useEffect(() => {
-    useSessionStore.getState().setSessionId(chatId);
-  }, [chatId]);
+    if (isActive) useSessionStore.getState().setSessionId(chatId);
+  }, [chatId, isActive]);
 
 const runtime = useChatRuntime({
     id: chatId,
@@ -255,10 +333,11 @@ const runtime = useChatRuntime({
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <ComposerBridge />
+      <ChatStateWatcher onRunningChange={onRunningChange} />
+      <ComposerBridge isActive={isActive} />
       <ChangeFormCard />
       <WriteConfirmCard />
-      <Thread />
+      <Thread isActive={isActive} />
     </AssistantRuntimeProvider>
   );
 }

@@ -17,6 +17,7 @@ from typing import Any
 
 from app.agents.tools.registry import tool
 from app.agents.memory.mem0_config import get_memory
+from app.agents.memory.reranker import rerank_memories, is_available as reranker_available
 from app.agents.memory.neo4j_store import (
     save_table_relation,
     query_table_relations,
@@ -66,10 +67,15 @@ def query_knowledge(purpose: str, query: str, knowledge_type: str = "") -> str:
                     filtered.append(m)
             if filtered: mem_list = filtered
         if mem_list:
-            results["semantic"] = [
+            # 副 agent（本地小模型）二次过滤不相关记忆
+            semantic_items = [
                 {"memory": m.get("memory", ""), "score": m.get("score", 0)}
                 for m in mem_list if isinstance(m, dict)
             ]
+            if reranker_available():
+                semantic_items = rerank_memories(query, semantic_items)
+            if semantic_items:
+                results["semantic"] = semantic_items
     except Exception as e:
         logger.warning("Mem0 search failed: %s", e)
         results["semantic_error"] = str(e)
@@ -241,6 +247,12 @@ def inject_knowledge(user_input: str, session_id: str = "", employee_id: str = "
         mem = get_memory()
         resp = mem.search(user_input, filters={"user_id": "business_shared"}, top_k=5, threshold=0.5)
         mem_list = resp.get("results", []) if isinstance(resp, dict) else (resp or [])
+        # 副 agent 二次过滤
+        if mem_list and reranker_available():
+            mem_list = rerank_memories(user_input, [
+                {"memory": m.get("memory", ""), "score": m.get("score", 0)}
+                for m in mem_list if isinstance(m, dict)
+            ])
         if mem_list:
             lines.append("【业务知识】")
             for m in mem_list:

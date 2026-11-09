@@ -39,9 +39,9 @@ type CatId = OaCatId | string; // OA 三类，或 "ds:<数据源名>"
 
 const PAGE_SIZE = 30;
 const INIT_VISIBLE = 30;
-const INPUT_SELECTOR = 'div[data-role="mention-input"]';
+const INPUT_SELECTOR = '[data-active="true"] div[data-role="mention-input"]';
 
-export function MentionPicker() {
+export function MentionPicker({ isActive = true }: { isActive?: boolean } = {}) {
   const [data, setData] = useState<FormsData | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -80,6 +80,10 @@ export function MentionPicker() {
   }, []);
 
   useEffect(() => {
+    if (!isActive) {
+      setOpen(false);
+      return;
+    }
     const el = document.querySelector<HTMLDivElement>(INPUT_SELECTOR);
     if (!el) return;
 
@@ -154,7 +158,7 @@ export function MentionPicker() {
       el.removeEventListener("keyup", handler);
       el.removeEventListener("keydown", keyHandler);
     };
-  }, [open, activeIdx, cat, query, data]);
+  }, [open, activeIdx, cat, query, data, isActive]);
 
   const catList = (): FormItem[] => {
     if (!data) return [];

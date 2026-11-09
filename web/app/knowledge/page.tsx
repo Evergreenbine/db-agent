@@ -54,7 +54,7 @@ type FormItem = {
 
 type TabKey = "mem0" | "relations" | "forms";
 
-export default function KnowledgePage() {
+export default function KnowledgePage({ onBack }: { onBack?: () => void }) {
   const [tab, setTab] = useState<TabKey>("mem0");
   const [loading, setLoading] = useState(true);
   const [mem0Items, setMem0Items] = useState<Mem0Item[]>([]);
@@ -116,10 +116,17 @@ export default function KnowledgePage() {
     <div className="flex h-dvh flex-col bg-background">
       {/* Header */}
       <header className="flex h-16 shrink-0 items-center gap-3 border-b px-6">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeftIcon className="size-4" />
-          返回
-        </Link>
+        {onBack ? (
+          <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeftIcon className="size-4" />
+            返回
+          </button>
+        ) : (
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeftIcon className="size-4" />
+            返回
+          </Link>
+        )}
         <span className="text-lg font-semibold">记忆管理</span>
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">

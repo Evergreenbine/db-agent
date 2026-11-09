@@ -69,11 +69,13 @@ export function ConversationSidebar({
   refreshKey,
   onSelect,
   onNew,
+  runningChats = new Set(),
 }: {
   activeSessionId: string | null;
   refreshKey: number;
   onSelect: (sessionId: string) => void;
   onNew: () => void;
+  runningChats?: Set<string>;
 }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +191,12 @@ export function ConversationSidebar({
                           {cleanTitle(c.title)}
                         </span>
                         <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          {runningChats.has(c.session_id) && (
+                            <span className="relative flex size-2">
+                              <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75" />
+                              <span className="relative inline-flex size-2 rounded-full bg-blue-500" />
+                            </span>
+                          )}
                           <span className="tabular-nums">{c.msg_count} 条</span>
                           <span className="text-muted-foreground/30">·</span>
                           <span className="tabular-nums">{formatTime(c.updated_at)}</span>
