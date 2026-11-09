@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>变更预览卡片设计稿</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f8f9fa; padding: 24px; color: #1a1a1a; }
+.wrapper { max-width: 760px; margin: 0 auto; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+.card-header .icon { width: 18px; height: 18px; background: #3b82f6; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; }
+.card-header .title { font-size: 13px; font-weight: 600; color: #374151; }
+.card-header .badge-count { margin-left: auto; font-size: 11px; color: #9ca3af; background: #f3f4f6; padding: 2px 8px; border-radius: 10px; }
+.purpose { padding: 10px 16px; font-size: 12px; color: #6b7280; border-bottom: 1px solid #f0f0f0; }
+.purpose b { color: #374151; font-weight: 500; }
+.legend { display: flex; gap: 12px; padding: 6px 16px; font-size: 10px; color: #9ca3af; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.steps { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.step { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.step-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+.step-num { font-size: 11px; font-weight: 600; color: #9ca3af; min-width: 20px; }
+.step-action { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.step-action.update { color: #2563eb; background: #eff6ff; }
+.step-table { font-size: 12px; font-weight: 500; color: #374151; }
+.step-ds { font-size: 11px; color: #9ca3af; }
+.step-desc { margin-left: auto; font-size: 11px; color: #9ca3af; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Preview table */
+.preview-table { border: 1px solid #e5e7eb; border-radius: 6px; overflow: auto; max-height: 240px; }
+.preview-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.preview-table thead th { position: sticky; top: 0; z-index: 1; background: #f9fafb; padding: 6px 10px; text-align: left; font-weight: 500; white-space: nowrap; border-bottom: 1px solid #e5e7eb; }
+.preview-table thead th .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.preview-table thead th .col-name { font-weight: 600; }
+.preview-table thead th .col-raw { font-size: 10px; color: #9ca3af; margin-left: 3px; }
+.preview-table thead th .col-table { font-size: 10px; margin-left: 3px; }
+/* affected header = red */
+th.c-red { color: #dc2626; } th.c-red .dot { background: #f87171; } th.c-red .col-name { color: #dc2626; } th.c-red .col-table { color: #dc2626; }
+/* source headers */
+th.c-green .dot { background: #22c55e; } th.c-green .col-name { color: #16a34a; } th.c-green .col-table { color: #16a34a; }
+th.c-purple .dot { background: #a855f7; } th.c-purple .col-name { color: #7c3aed; } th.c-purple .col-table { color: #7c3aed; }
+th.c-blue .dot { background: #3b82f6; } th.c-blue .col-name { color: #2563eb; } th.c-blue .col-table { color: #2563eb; }
+
+.preview-table tbody td { padding: 5px 10px; border-bottom: 1px solid #f3f4f6; white-space: nowrap; color: #374151; }
+.preview-table tbody td.idx { color: #9ca3af; font-size: 11px; }
+td.old-val { color: #dc2626; text-decoration: line-through; font-weight: 700; background: #fef2f2; }
+td.src-green { color: #16a34a; font-weight: 600; background: #f0fdf4; }
+td.src-purple { color: #7c3aed; font-weight: 600; background: #faf5ff; }
+
+/* SQL block - markdown style */
+.sql-block { border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb; }
+.sql-block-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 10px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+.sql-block-head .lang { font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
+.copy-btn { background: none; border: none; cursor: pointer; padding: 2px; color: #9ca3af; opacity: 0.6; transition: opacity 0.15s; display: flex; align-items: center; }
+.copy-btn:hover { opacity: 1; color: #6b7280; }
+.copy-btn svg { width: 14px; height: 14px; }
+.sql-code { padding: 10px 12px; font-family: "Cascadia Code", "Consolas", monospace; font-size: 11.5px; line-height: 1.6; color: #1f2937; white-space: pre-wrap; word-break: break-all; background: #fff; }
+.sql-kw { color: #c678dd; font-weight: 600; }
+.sql-str { color: #98c379; }
+.sql-num { color: #d19a66; }
+
+/* Explanation */
+.sql-explain { font-size: 12px; color: #1f2937; margin-top: 6px; padding: 8px 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; line-height: 1.5; }
+.sql-explain::before { content: "\01F4A1 说明："; font-weight: 600; color: #92400e; }
+
+.card-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid #f0f0f0; background: #fafafa; }
+.btn { font-size: 12px; padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+.btn-cancel { background: #fff; border: 1px solid #d1d5db; color: #374151; }
+.btn-confirm { background: #2563eb; color: #fff; }
+.label { font-size: 11px; color: #9ca3af; margin: 20px 0 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="label">单步联表更新（1条SQL，读明细写主表）</div>
+<div class="card">
+  <div class="card-header">
+    <div class="icon">✎</div>
+    <span class="title">数据变更预览</span>
+    <span class="badge-count">1 步</span>
+  </div>
+  <div class="purpose"><b>目的：</b>将明细表试验类型同步到主表 sylx2 字段</div>
+  <div class="legend">
+    <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f87171"></span> 主表（被更新）</div>
+    <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e"></span> 明细表（数据源）</div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">#1</span>
+        <span class="step-action update">更新</span>
+        <span class="step-table">检测委托单主表</span>
+        <span class="step-ds">OA · Oracle</span>
+      </div>
+      <div class="step-body">
+        <div class="preview-table">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="c-blue"><span class="dot"></span><span class="col-name">主键</span><span class="col-raw">id</span></th>
+                <th class="c-red"><span class="dot"></span><span class="col-name">试验类型</span><span class="col-raw">sylx2</span><span class="col-table">主表</span> ✎</th>
+                <th class="c-green"><span class="dot"></span><span class="col-name">试验类型</span><span class="col-raw">sylx1</span><span class="col-table">明细</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="idx">1</td>
+                <td>37103</td>
+                <td class="old-val">1</td>
+                <td class="src-green">调休</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sql-block">
+          <div class="sql-block-head">
+            <span class="lang">SQL</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.sql-block').querySelector('.sql-code').textContent)" title="复制">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M3 11V3.5C3 3.2 3.2 3 3.5 3H11"/></svg>
+            </button>
+          </div>
+          <div class="sql-code"><span class="sql-kw">UPDATE</span> formtable_main_238 a
+<span class="sql-kw">SET</span> a.sylx2 = (<span class="sql-kw">SELECT</span> b.sylx1 <span class="sql-kw">FROM</span> formtable_main_238_dt1 b
+               <span class="sql-kw">WHERE</span> b.mainid = a.id <span class="sql-kw">AND</span> b.id = <span class="sql-num">11643</span>)
+<span class="sql-kw">WHERE</span> a.id = <span class="sql-num">37103</span></div>
+        </div>
+        <div class="sql-explain">从明细表 id=11643 取 sylx1 值（调休），写入主表 id=37103 的 sylx2（原值 1 将被覆盖）</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <button class="btn btn-cancel">✕ 取消</button>
+    <button class="btn btn-confirm">✓ 确定执行 1 步</button>
+  </div>
+</div>
+
+<div class="label">复杂场景：多列SET + 多表数据源（1条SQL）</div>
+<div class="card">
+  <div class="card-header">
+    <div class="icon">✎</div>
+    <span class="title">数据变更预览</span>
+    <span class="badge-count">1 步</span>
+  </div>
+  <div class="purpose"><b>目的：</b>从明细1同步试验类型，从明细2同步委托编号和标记，一次性更新主表3个字段</div>
+  <div class="legend">
+    <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f87171"></span> 主表（被更新）</div>
+    <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e"></span> 明细表1（数据源）</div>
+    <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#a855f7"></span> 明细表2（数据源）</div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-header">
+        <span class="step-num">#1</span>
+        <span class="step-action update">更新</span>
+        <span class="step-table">检测委托单主表</span>
+        <span class="step-ds">OA · Oracle</span>
+        <span class="step-desc">多列SET，数据来自明细1+明细2</span>
+      </div>
+      <div class="step-body">
+        <div class="preview-table">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="c-blue"><span class="dot"></span><span class="col-name">主键</span><span class="col-raw">id</span></th>
+                <th class="c-red"><span class="dot"></span><span class="col-name">试验类型</span><span class="col-raw">sylx2</span><span class="col-table">主表</span> ✎</th>
+                <th class="c-green"><span class="dot"></span><span class="col-name">试验类型</span><span class="col-raw">sylx1</span><span class="col-table">明细1</span></th>
+                <th class="c-red"><span class="dot"></span><span class="col-name">委托编号</span><span class="col-raw">wtdbh</span><span class="col-table">主表</span> ✎</th>
+                <th class="c-purple"><span class="dot"></span><span class="col-name">委托编号</span><span class="col-raw">wtdbh2</span><span class="col-table">明细2</span></th>
+                <th class="c-red"><span class="dot"></span><span class="col-name">标记</span><span class="col-raw">sybz</span><span class="col-table">主表</span> ✎</th>
+                <th class="c-purple"><span class="dot"></span><span class="col-name">标记</span><span class="col-raw">sybz2</span><span class="col-table">明细2</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="idx">1</td>
+                <td>37103</td>
+                <td class="old-val">1</td>
+                <td class="src-green">调休</td>
+                <td class="old-val">空</td>
+                <td class="src-purple">WCC15_01</td>
+                <td class="old-val">异常</td>
+                <td class="src-purple">已清理</td>
+              </tr>
+              <tr>
+                <td class="idx">2</td>
+                <td>37104</td>
+                <td class="old-val">2</td>
+                <td class="src-green">加班</td>
+                <td class="old-val">空</td>
+                <td class="src-purple">WCC15_02</td>
+                <td class="old-val">异常</td>
+                <td class="src-purple">已清理</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sql-block">
+          <div class="sql-block-head">
+            <span class="lang">SQL</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.sql-block').querySelector('.sql-code').textContent)" title="复制">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M3 11V3.5C3 3.2 3.2 3 3.5 3H11"/></svg>
+            </button>
+          </div>
+          <div class="sql-code"><span class="sql-kw">UPDATE</span> formtable_main_238 a
+<span class="sql-kw">SET</span> (a.sylx2, a.wtdbh, a.sybz) = (
+    <span class="sql-kw">SELECT</span> b.sylx1, c.wtdbh2, c.sybz2
+    <span class="sql-kw">FROM</span> formtable_main_238_dt1 b, formtable_main_238_dt2 c
+    <span class="sql-kw">WHERE</span> b.mainid = a.id <span class="sql-kw">AND</span> c.mainid = a.id
+      <span class="sql-kw">AND</span> b.id = <span class="sql-num">11643</span> <span class="sql-kw">AND</span> c.id = <span class="sql-num">22001</span>
+)
+<span class="sql-kw">WHERE</span> a.id <span class="sql-kw">IN</span> (<span class="sql-num">37103</span>, <span class="sql-num">37104</span>)</div>
+        </div>
+        <div class="sql-explain">从明细1取 sylx1，从明细2取 wtdbh2 和 sybz2，分别写入主表的 sylx2、wtdbh、sybz 三个字段，影响 2 行</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <button class="btn btn-cancel">✕ 取消</button>
+    <button class="btn btn-confirm">✓ 确定执行 1 步</button>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

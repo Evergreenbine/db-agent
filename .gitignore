@@ -1,0 +1,47 @@
+# Root
+*.tar.gz
+*.log
+neo4j-community.zip
+neo4j/
+*.png
+*.mp4
+
+# Python runtime
+.qdrant_data/
+.chroma/
+__pycache__/
+*.pyc
+*.egg-info/
+*.db
+py/data/
+py/.mem0_data/
+py/agent.db
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+.playwright-cli/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp / scratch
+_check*.py
+tmp_*.py
+_patch_*.py
+write_agents.py
+task/
+'

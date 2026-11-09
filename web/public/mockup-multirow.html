@@ -1,0 +1,123 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>多行 UPDATE 确认卡片 · 确认后（已执行）</title>
+<style>
+  :root{--fg:#18181b;--muted:#71717a;--line:#e4e4e7;--green:#16a34a;--green-d:#15803d;--green-l:#dcfce7;--green-b:#bbf7d0}
+  *{scrollbar-width:none} *::-webkit-scrollbar{width:0;height:0;display:none}
+  body{margin:0;background:#f4f5f7;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;color:var(--fg)}
+  button,[role=button]{cursor:pointer}
+  .wrap{max-width:760px;margin:24px auto;padding:0 16px}
+  .hint{font-size:12px;color:var(--muted);margin:0 0 8px 2px}
+  /* 确认后：白底 + 绿色左侧条，不全绿 */
+  .card{background:#fff;border:1px solid var(--green-b);border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+  .head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-bottom:1px solid var(--line);background:#fafafa;padding:11px 16px}
+  .ttl{font-size:14px;font-weight:600;color:var(--fg)}
+  .badge{border-radius:9999px;border:1px solid;padding:1px 8px;font-size:12px;font-weight:500}
+  .b-upd{border-color:#fdba74;background:#fff7ed;color:#c2410c}
+  .tag{border-radius:6px;border:1px solid;padding:1px 8px;font-size:12px;font-weight:500}
+  .tag-wf{border-color:#fb923c;background:#ffedd5;color:#c2410c}
+  .right{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green-d)}
+  .right b{color:var(--green-d)}
+  .body{padding:13px 16px;display:flex;flex-direction:column;gap:13px}
+  .purpose{font-size:12px;color:var(--muted);margin:0}
+  .purpose b{font-weight:500;color:var(--fg)}
+  .sec-h{font-size:12px;font-weight:500;color:var(--fg);margin:0 0 6px;display:flex;align-items:center;gap:6px}
+  .sec-h .ok{color:var(--green);font-weight:500}
+  .sec-h .sub{font-weight:400;color:var(--muted);margin-left:4px}
+  .scope{font-size:12px;color:var(--green-d);background:var(--green-l);border:1px solid var(--green-b);border-radius:6px;padding:5px 10px}
+  .scope b{color:#14532d}
+  .dm-list{display:flex;flex-direction:column;gap:7px}
+  .dm{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fafafa;border-radius:8px;padding:7px 12px;font-size:14px}
+  .dm .nm{font-weight:500;min-width:120px;color:var(--fg)}
+  .dm .nm small{color:var(--muted);font-weight:400;margin-left:4px;font-size:12px}
+  .dm .arrow{color:var(--muted)}
+  .inp{width:92px;border:1px solid var(--line);background:#f4f4f5;border-radius:6px;padding:4px 8px;font-size:14px;color:var(--muted);outline:none}
+  .dm .chg{font-size:11px;color:var(--green-d);border:1px solid var(--green-b);background:var(--green-l);border-radius:9999px;padding:1px 8px;white-space:nowrap}
+  .lock{display:flex;align-items:center;gap:4px;margin:0 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1px solid var(--line);background:#fafafa;border-radius:6px;padding:1px 8px;font-size:12px;color:#52525b}
+  .chip b{color:var(--fg)}
+  .rows-wrap{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .rows{max-height:240px;overflow:auto}
+  table{min-width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+  thead th{position:sticky;top:0;background:#fafafa;color:var(--fg);font-weight:500;text-align:left;padding:6px 12px;font-size:12px;white-space:nowrap;border-bottom:1px solid var(--line)}
+  thead th small{font-weight:400;color:var(--muted);margin-left:3px}
+  tbody td{padding:6px 12px;border-top:1px solid #f4f4f5;white-space:nowrap}
+  tbody td.num{color:var(--muted);font-variant-numeric:tabular-nums}
+  tbody td.new{color:var(--green-d);font-weight:500}
+  tbody td.new s{color:#a1a1aa;font-weight:400;margin-right:4px;text-decoration-color:#a1a1aa}
+  .fade-r{position:absolute;top:0;right:0;width:28px;height:100%;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0)0%,rgba(255,255,255,.95)100%)}
+  .rows-note{font-size:12px;color:var(--muted);margin:5px 0 0}
+  pre{white-space:pre-wrap;word-break:break-all;background:#fafafa;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;line-height:1.6;margin:0;font-family:ui-monospace,"Cascadia Code",monospace;color:var(--fg)}
+  .foot{display:flex;justify-content:flex-end;align-items:center;gap:10px;border-top:1px solid var(--line);background:#fafafa;padding:10px 16px}
+  .done-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green);color:#fff;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500}
+  .sync{font-size:11px;color:var(--green);margin:10px 2px 0}
+  .lbl{font-size:11px;color:var(--muted);margin:18px 2px 0;line-height:1.7}
+</style></head>
+<body>
+<div class="wrap">
+  <p class="hint">草图 · 多行 UPDATE 确认后（已执行）状态 · 白底绿点缀</p>
+  <div class="card">
+    <div class="head">
+      <span style="font-size:15px;color:var(--green)">✓</span>
+      <span class="ttl">数据变更确认</span>
+      <span class="badge b-upd">更新</span>
+      <span class="tag tag-wf">formtable_main_238</span>
+      <span class="right"><span>✓ 已执行 · 实际变更 <b>42</b>/50 行</span><span>⏱ 1.2s</span></span>
+    </div>
+    <div class="body">
+      <p class="purpose">目的：把所有"已提交"请假单的请假时数统一改 18、请假类别统一改事假</p>
+      <div class="scope">✓ 已执行：匹配 <b>50</b> 行 · 实际变更 <b>42</b> 行（<b>8</b> 行已是目标值未动）</div>
+      <div>
+        <p class="sec-h">变更明细 <span class="ok">✓ 已执行</span></p>
+        <div class="dm-list">
+          <div class="dm"><span class="nm">请假时数<small>qjts</small></span><span class="arrow">→</span><input class="inp" value="18" disabled/><span class="chg">✓已更改</span></div>
+          <div class="dm"><span class="nm">请假类别<small>qjlb</small></span><span class="arrow">→</span><input class="inp" value="事假" disabled/><span class="chg">✓已更改</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="sec-h lock">🔒 定位条件</p>
+        <div class="chips"><span class="chip">单据状态<small> djzt</small> = <b>已提交(1)</b></span></div>
+      </div>
+      <div>
+        <p class="sec-h">已变更行（42 行）<span class="sub">· 显示新值，原值灰色删除线标注</span></p>
+        <div class="rows-wrap">
+          <div class="rows">
+            <table>
+              <thead><tr><th>#</th><th>id</th><th>请假人<small>sqrmc</small></th><th>部门<small>bm</small></th><th>请假时数<small>qjts</small></th><th>请假类别<small>qjlb</small></th></tr></thead>
+              <tbody>
+                <tr><td class="num">1</td><td class="num">67751</td><td>吴钦腾</td><td>研发部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">2</td><td class="num">67752</td><td>何春梅</td><td>研发部</td><td class="new"><s>16</s>18</td><td class="new">事假</td></tr>
+                <tr><td class="num">3</td><td class="num">67760</td><td>李娜</td><td>研发部</td><td class="new"><s>20</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">4</td><td class="num">67761</td><td>王强</td><td>运营部</td><td class="new"><s>16</s>18</td><td class="new">事假</td></tr>
+                <tr><td class="num">5</td><td class="num">67768</td><td>赵敏</td><td>研发部</td><td class="new">18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">6</td><td class="num">67770</td><td>陈刚</td><td>产品部</td><td class="new"><s>20</s>18</td><td class="new">事假</td></tr>
+                <tr><td class="num">7</td><td class="num">67771</td><td>孙磊</td><td>研发部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">8</td><td class="num">67775</td><td>周婷</td><td>运营部</td><td class="new"><s>20</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">9</td><td class="num">67780</td><td>吴峰</td><td>产品部</td><td class="new"><s>16</s>18</td><td class="new">事假</td></tr>
+                <tr><td class="num">10</td><td class="num">67782</td><td>郑华</td><td>研发部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">11</td><td class="num">67785</td><td>冯雪</td><td>运营部</td><td class="new"><s>20</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">12</td><td class="num">67788</td><td>蒋涛</td><td>研发部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">13</td><td class="num">67790</td><td>韩静</td><td>产品部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">14</td><td class="num">67792</td><td>沈鹏</td><td>研发部</td><td class="new"><s>20</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+                <tr><td class="num">15</td><td class="num">67795</td><td>杨柳</td><td>运营部</td><td class="new"><s>16</s>18</td><td class="new"><s>病假</s>事假</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="fade-r"></div>
+        </div>
+        <p class="rows-note">仅显示前 15 行（示例），实际变更 42 行；鼠标滚轮/触控板可上下滑动浏览。</p>
+      </div>
+      <div>
+        <p class="sec-h">已执行 SQL</p>
+        <pre>UPDATE formtable_main_238 SET qjts = 18, qjlb = '事假' WHERE djzt = 1  -- 影响 50 行(42 变更)</pre>
+      </div>
+    </div>
+    <div class="foot">
+      <span class="done-badge">✓ 已执行，实际变更 42 行</span>
+    </div>
+  </div>
+  <p class="sync">↪ 执行结果已自动同步给小E（agent 上下文已更新），后续对话它知道这次改了什么。</p>
+  <p class="lbl">确认后状态：白底 + 绿色左侧条；变更明细输入框禁用（灰底）并标注 ✓已更改；受影响行表显示新值、原值灰色删除线；底部绿色"已执行"徽章。</p>
+</div>
+</body></html>
